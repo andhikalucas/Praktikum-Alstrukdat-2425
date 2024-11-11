@@ -1,71 +1,70 @@
-#include "stack.c"
 #include <stdio.h>
-/* Ide Besar: push semua character ke stack word. jika ada kasus duplicate character n[...], dia akan diparsing ke dalam array,
-   kemudian diinsert lagi ke stack word original (dan dimultiply).*/
+#include "boolean.h"
+#include "stack.h"
+/* Ide Besar: push semua character ke main stack. jika ada kasus duplicate character k[...], dia akan diparsing ke dalam array,
+   kemudian diinsert lagi ke stack word original (setelah dimultiply).*/
 int main(){
-    Stack num, word;
-    CreateEmpty(&num);
-    CreateEmpty(&word);
+    Stack main;
+    CreateEmpty(&main);
 
     int n;
     scanf("%d", &n);
-    char cc[n];
-    scanf("%s", cc);
+    char ch;
     
-    for (int i = 0; i < n; i++){
-        // Jika character berupa angka, simpan angka multiplier ke stack number
-        if (cc[i] >= '0' && cc[i] <= '9'){
-            Push(&num, cc[i]);
-        }
-        
-        // Jika character berupa alphabet atau [, simpan ke word stack
-        else if (cc[i] >= 'a' && cc[i] <= 'z' || cc[i] == '['){
-            Push(&word, cc[i]);
-        }
+    int i, k, count, pow_value, len_stack;
+    char val, closebracket;
+    for (i = 0; i < n; i++){
+        scanf(" %c", &ch);
 
-        // Jika character adalah ], akan dilakukan parsing pada characters yang ada sebelum [
-        else if (cc[i] == ']'){
-            // Copy characters into array
+        // Push semua karakter ke main stack hingga menemukan ']'
+        if (ch == ']'){
+
+            // Parsing semua karakter yang ada di dalam bracket ke dalam array
             char array[MaxEl];
             int len_array = 0;
-            while (InfoTop(word) != '['){
-                Pop(&word, &array[len_array]);
+            while (InfoTop(main) != '['){
+                Pop(&main, &array[len_array]);
                 len_array++;
             }
 
-            // Pop remaining [
-            char closebracket;
-            Pop(&word, &closebracket);
+            // Terminasi string dengan '\0' di akhir
+            array[len_array] = '\0';
 
-            // Reorder array ke original characters, karena stack yang dicopy ke array akan bersifat terbalik
-            for (int j = 0; j < len_array / 2; j++){
-                char temp = array[j];
-                array[j] = array[len_array-j-1];
-                array[len_array-j-1] = temp;
+            // Pop remaining '['
+            char closebracket;
+            Pop(&main, &closebracket);
+
+            // Parsing angka yang ada di belakang '[' (multipliernya). Simpan ke dalam integer k
+            k = 0;
+            count = 0; // digit ke-berapa, untuk perkalian dengan 10
+            while (InfoTop(main) >= '0' && InfoTop(main) <= '9'){
+                Pop(&main, &val);
+                pow_value = 1;
+                // Simple function untuk perpangkatan 10^n
+                for (int x = 0; x < count; x++){
+                    pow_value *= 10;
+                }
+                // Jumlahkan k dengan digit yang sudah diset dengan -0 yang benar (puluhan, ratusan, dll)
+                k += (val - '0') * pow_value;
+                count++;
             }
 
-            // Push array to word stack dengan di duplicate sebanyak multiply kali
-            char multiply;
-            Pop(&num, &multiply);
-            for (int outer_loop = 0; outer_loop < multiply - '0'; outer_loop++){
-                for (int j = 0; j < len_array; j++){
-                    Push(&word, array[j]);
+            // Push character dalam array ke main stack sebanyak k kali
+            for (int x = 0; x < k; x++){
+                for (int y = len_array - 1; y >= 0; y--){ // Push dari character terakhir sebelum \0 hingga character awal (terbalik)
+                    Push(&main, array[y]);
                 }
             }
+
+        }
+        else{ // Semua karakter selain ']' dipush ke main stack
+            Push(&main, ch);
         }
     }
-
-    // Copy stack to array biar bisa diprint
-    char array_all[MaxEl];
-    int len_array_all = 0;
-    while (!IsEmpty(word)){
-        Pop(&word, &array_all[len_array_all]);
-        len_array_all++;
-    }
-    
-    // Print dari belakang (sifat stack terbalik)
-    for (int i = len_array_all - 1; i >= 0; i--){
-        printf("%c", array_all[i]);
+    // Print stack menggunakan buffer dari ADT stack (lebih gampang aja)
+    len_stack = Top(main);
+    for (i = 0; i <= len_stack; i++){
+        printf("%c", main.T[i]);
     }
     printf("\n");
     return 0;
